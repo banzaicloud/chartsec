@@ -14,26 +14,14 @@
 
 package chartsec
 
+import (
+	"github.com/banzaicloud/chartsec/internal/chartsec"
+)
+
 // ChartScanner scans a Helm chart archive for security issues.
-type ChartScanner struct {
-	policies []Policy
-}
+type ChartScanner = chartsec.ChartScanner
 
-// NewChartScanner returns a new ChartScanner instance.
-func NewChartScanner(policies []Policy) *ChartScanner {
-	return &ChartScanner{
-		policies: policies,
-	}
-}
-
-// Scan runs the security scans on a Helm chart archive.
-func (s *ChartScanner) Scan(chart []byte) error {
-	for _, policy := range s.policies {
-		err := policy.Enforce(chart)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+// NewDefaultChartScanner returns a new ChartScanner instance with default security settings.
+func NewDefaultChartScanner() *ChartScanner {
+	return chartsec.NewChartScanner()
 }

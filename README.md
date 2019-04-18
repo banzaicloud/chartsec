@@ -51,7 +51,7 @@ func main() {
 ```
 
 
-## Security checks
+## Security checks
 
 - Compressed archive does not exceed 10MB
 - Decompressed archive does not exceed 10MB

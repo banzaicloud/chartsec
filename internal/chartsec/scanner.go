@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	maxArchiveSize = 10 * 1024 * 1024 // 10 MB
-	maxDataSize    = 10 * 1024 * 1024 // 10 MB
+	maxCompressedArchiveSize   = 10 * 1024 * 1024 // 10 MB
+	mayUncompressedArchiveSize = 10 * 1024 * 1024 // 10 MB
 )
 
 const (
@@ -51,14 +51,14 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 	gzbuf := new(bytes.Buffer)
 
 	// Make sure the archive does not exceed the maximum size
-	readBytes, err := io.CopyN(gzbuf, r, maxArchiveSize)
+	readBytes, err := io.CopyN(gzbuf, r, maxCompressedArchiveSize)
 	if err != nil && err != io.EOF {
 		return errors.Wrap(err, "failed to read chart archive")
 	}
 
-	if err != io.EOF && readBytes == maxArchiveSize {
+	if err != io.EOF && readBytes == maxCompressedArchiveSize {
 		return &policyViolationError{
-			violation: "too large chart archive",
+			violation: "chart is too large",
 			policy:    compressedArchiveSizePolicy,
 		}
 	}
@@ -71,14 +71,14 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 	tarbuf := new(bytes.Buffer)
 
 	// Make sure the uncompressed archive does not exceed the maximum size
-	readBytes, err = io.CopyN(tarbuf, gzr, maxDataSize)
+	readBytes, err = io.CopyN(tarbuf, gzr, mayUncompressedArchiveSize)
 	if err != nil && err != io.EOF {
 		return errors.Wrap(err, "failed to decompress chart archive")
 	}
 
-	if err != io.EOF && readBytes == maxDataSize {
+	if err != io.EOF && readBytes == mayUncompressedArchiveSize {
 		return &policyViolationError{
-			violation: "too large chart",
+			violation: "chart is too large",
 			policy:    uncompressedArchiveSizePolicy,
 		}
 	}

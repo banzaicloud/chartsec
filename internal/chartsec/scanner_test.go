@@ -34,56 +34,44 @@ func TestChartScanner_ValidChart(t *testing.T) {
 }
 
 func TestChartScanner_LargeArchive(t *testing.T) {
-	scanner := NewChartScanner()
+	err := testViolation(t, "../../testdata/archives/large_archive.tgz")
 
-	chart := openChart(t, "../../testdata/archives/large_archive.tgz")
-
-	err := scanner.Scan(chart)
-
-	if err == nil {
-		t.Fatal("chart is expected to fail the security scan")
+	if got, want := err.Error(), "chart is too large"; got != want {
+		t.Errorf("unexpected error: %s", got)
 	}
 
-	if got, want := err.Error(), "too large chart archive"; got != want {
-		t.Errorf("unexpected error: %s", got)
+	if got, want := err.Policy(), compressedArchiveSizePolicy; got != want {
+		t.Errorf("unexpected policy: %s", got)
 	}
 }
 
 func TestChartScanner_LargeData(t *testing.T) {
-	scanner := NewChartScanner()
+	err := testViolation(t, "../../testdata/archives/large_data.tgz")
 
-	chart := openChart(t, "../../testdata/archives/large_data.tgz")
-
-	err := scanner.Scan(chart)
-
-	if err == nil {
-		t.Fatal("chart is expected to fail the security scan")
+	if got, want := err.Error(), "chart is too large"; got != want {
+		t.Errorf("unexpected error: %s", got)
 	}
 
-	if got, want := err.Error(), "too large chart"; got != want {
-		t.Errorf("unexpected error: %s", got)
+	if got, want := err.Policy(), uncompressedArchiveSizePolicy; got != want {
+		t.Errorf("unexpected policy: %s", got)
 	}
 }
 
 func TestChartScanner_MaliciousContent(t *testing.T) {
-	scanner := NewChartScanner()
-
-	tests := []string{"malicious-chart", "other-malicious-chart"}
+	tests := []string{"malicious-content-1", "malicious-content-1"}
 
 	for _, test := range tests {
 		test := test
 
 		t.Run(test, func(t *testing.T) {
-			chart := openChart(t, fmt.Sprintf("../../testdata/charts/%s-0.1.0.tgz", test))
-
-			err := scanner.Scan(chart)
-
-			if err == nil {
-				t.Fatal("chart is expected to fail the security scan")
-			}
+			err := testViolation(t, fmt.Sprintf("../../testdata/archives/%s.tgz", test))
 
 			if got, want := err.Error(), "chart contains malicious content"; got != want {
 				t.Errorf("unexpected error: %s", got)
+			}
+
+			if got, want := err.Policy(), maliciousContentPolicy; got != want {
+				t.Errorf("unexpected policy: %s", got)
 			}
 		})
 	}
@@ -98,4 +86,23 @@ func openChart(t *testing.T, chartPath string) io.Reader {
 	}
 
 	return chart
+}
+
+func testViolation(t *testing.T, chartPath string) PolicyViolationError {
+	scanner := NewChartScanner()
+
+	chart := openChart(t, chartPath)
+
+	err := scanner.Scan(chart)
+
+	if err == nil {
+		t.Fatal("chart is expected to fail the security scan")
+	}
+
+	verr, ok := err.(PolicyViolationError)
+	if !ok {
+		t.Fatalf("error is expected to be of type PolicyViolationError, received: %T", err)
+	}
+
+	return verr
 }

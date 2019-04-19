@@ -32,6 +32,12 @@ const (
 	maxDataSize    = 10 * 1024 * 1024 // 10 MB
 )
 
+const (
+	compressedArchiveSizePolicy   = "compressed-archive-size"
+	uncompressedArchiveSizePolicy = "uncompressed-archive-size"
+	maliciousContentPolicy        = "maliciousContent"
+)
+
 // ChartScanner scans a Helm chart archive for security issues.
 type ChartScanner struct{}
 
@@ -51,7 +57,10 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 	}
 
 	if err != io.EOF && readBytes == maxArchiveSize {
-		return errors.New("too large chart archive")
+		return &policyViolationError{
+			violation: "too large chart archive",
+			policy:    compressedArchiveSizePolicy,
+		}
 	}
 
 	gzr, err := gzip.NewReader(gzbuf)
@@ -68,7 +77,10 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 	}
 
 	if err != io.EOF && readBytes == maxDataSize {
-		return errors.New("too large chart")
+		return &policyViolationError{
+			violation: "too large chart",
+			policy:    uncompressedArchiveSizePolicy,
+		}
 	}
 
 	_ = gzr.Close()
@@ -94,7 +106,10 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 			sanitizedContent := bluemonday.UGCPolicy().SanitizeBytes(content)
 
 			if !bytes.Equal(content, sanitizedContent) {
-				return errors.New("chart contains malicious content")
+				return &policyViolationError{
+					violation: "chart contains malicious content",
+					policy:    maliciousContentPolicy,
+				}
 			}
 		}
 	}

@@ -14,17 +14,26 @@
 
 package chartsec
 
-import (
-	"github.com/banzaicloud/chartsec/internal/chartsec"
-)
-
 // PolicyViolationError contains the details for a policy violation.
-type PolicyViolationError = chartsec.PolicyViolationError
+type PolicyViolationError interface {
+	error
 
-// ChartScanner scans a Helm chart archive for security issues.
-type ChartScanner = chartsec.ChartScanner
+	// Policy returns the name of the policy.
+	Policy() string
+}
 
-// NewDefaultChartScanner returns a new ChartScanner instance with default security settings.
-func NewDefaultChartScanner() *ChartScanner {
-	return chartsec.NewChartScanner()
+// policyViolationError contains the details for a policy violation.
+type policyViolationError struct {
+	violation string
+	policy    string
+}
+
+// Policy returns the name of the policy.
+func (e *policyViolationError) Policy() string {
+	return e.policy
+}
+
+// Error implements the builtin error interface.
+func (e *policyViolationError) Error() string {
+	return e.violation
 }

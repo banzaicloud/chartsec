@@ -9,5 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Initial release
+
 
 [Unreleased]: https://github.com/banzaicloud/chartsec/compare/v0.0.0...HEAD

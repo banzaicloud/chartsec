@@ -43,6 +43,9 @@ func main() {
 	err = scanner.Scan(file)
 	if err != nil {
 		fmt.Println("chart scan failed:", err)
+		if err, ok := err.(chartsec.PolicyViolationError); ok {
+			fmt.Println("violation context:\n", err.Context())
+		}
 		os.Exit(1)
 	}
 }

@@ -20,17 +20,26 @@ type PolicyViolationError interface {
 
 	// Policy returns the name of the policy.
 	Policy() string
+
+	// Context returns the context of the violation.
+	Context() string
 }
 
 // policyViolationError contains the details for a policy violation.
 type policyViolationError struct {
 	violation string
 	policy    string
+	context   string
 }
 
 // Policy returns the name of the policy.
 func (e *policyViolationError) Policy() string {
 	return e.policy
+}
+
+// Context returns the context of the violation.
+func (e *policyViolationError) Context() string {
+	return e.context
 }
 
 // Error implements the builtin error interface.

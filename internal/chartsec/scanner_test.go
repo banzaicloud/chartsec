@@ -66,7 +66,7 @@ func TestChartScanner_MaliciousContent(t *testing.T) {
 		t.Run(test, func(t *testing.T) {
 			err := testViolation(t, fmt.Sprintf("../../testdata/archives/%s.tgz", test))
 
-			if got, want := err.Error(), "chart contains malicious content"; got != want {
+			if got, want := err.Error(), "chart contains malicious content in file: malicious-content-1/README.md"; got != want {
 				t.Errorf("unexpected error: %s", got)
 			}
 

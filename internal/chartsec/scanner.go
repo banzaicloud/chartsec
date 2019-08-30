@@ -18,6 +18,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"html"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 const (
@@ -103,12 +105,18 @@ func (s *ChartScanner) Scan(r io.Reader) error {
 				return errors.Wrapf(err, "failed to extract file %q from chart archive", fileName)
 			}
 
-			sanitizedContent := bluemonday.UGCPolicy().SanitizeBytes(content)
+			contentStr := string(content)
+			sanitizedContentStr := html.UnescapeString(bluemonday.UGCPolicy().Sanitize(string(content)))
 
-			if !bytes.Equal(content, sanitizedContent) {
+			if contentStr != sanitizedContentStr {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.PatchMake(contentStr, sanitizedContentStr)
+				patch := dmp.PatchToText(diffs)
+
 				return &policyViolationError{
-					violation: "chart contains malicious content",
+					violation: "chart contains malicious content in file: " + fileName,
 					policy:    maliciousContentPolicy,
+					context:   patch,
 				}
 			}
 		}
